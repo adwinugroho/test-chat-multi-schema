@@ -1,0 +1,11 @@
+tenant-api/config/config.yaml
+tenant-manager/config/config.yaml
+# macOS system files
+*.DS_Store
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
