@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/adwinugroho/test-chat-multi-schema/config"
-	controllerUser "github.com/adwinugroho/test-chat-multi-schema/controller"
+	"github.com/adwinugroho/test-chat-multi-schema/controller"
 	internalMiddleware "github.com/adwinugroho/test-chat-multi-schema/controller/middleware"
 	"github.com/adwinugroho/test-chat-multi-schema/pkg/logger"
-	repoUser "github.com/adwinugroho/test-chat-multi-schema/repository"
-	serviceUser "github.com/adwinugroho/test-chat-multi-schema/service"
+	"github.com/adwinugroho/test-chat-multi-schema/repository"
+	"github.com/adwinugroho/test-chat-multi-schema/service"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -43,11 +43,16 @@ func main() {
 	e.Validator = &internalMiddleware.CustomValidator{Validator: validator.New()}
 	e.Use(middleware.Recover())
 
-	userRepository := repoUser.NewUserRepository(dbHandler.DB)
-	userService := serviceUser.NewUserService(userRepository)
-	authHandler := controllerUser.NewUserHandler(userService)
+	userRepository := repository.NewUserRepository(dbHandler.DB)
+	userService := service.NewUserService(userRepository)
+	authHandler := controller.NewUserHandler(userService)
 
-	controllerUser.UserRoutes(e, authHandler, userService)
+	tenantRepository := repository.NewTenantRepository(dbHandler.DB)
+	tenantService := service.NewTenantService(tenantRepository)
+	tenantHandler := controller.NewTenantHandler(tenantService)
+
+	controller.UserRoutes(e, authHandler)
+	controller.TenantRoutes(e, tenantHandler, userService)
 
 	e.Use(middleware.Secure())
 
