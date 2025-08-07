@@ -10,7 +10,7 @@ type NewTenantRequest struct {
 }
 
 type UpdateTenantConcurrencyRequest struct {
-	Workers int `json:"workers" validate:"required"`
+	Workers int `json:"workers" validate:"min=1"`
 }
 
 type PublishRequest struct {

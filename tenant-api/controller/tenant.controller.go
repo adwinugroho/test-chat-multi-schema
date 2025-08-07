@@ -9,17 +9,16 @@ import (
 	"github.com/adwinugroho/test-chat-multi-schema/domain"
 	"github.com/adwinugroho/test-chat-multi-schema/model"
 	"github.com/adwinugroho/test-chat-multi-schema/pkg/logger"
-	"github.com/adwinugroho/test-chat-multi-schema/service"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
 type TenantHandler struct {
 	service       domain.TenantService
-	tenantManager *service.TenantManager
+	tenantManager domain.TenantManagerWorker
 }
 
-func NewTenantHandler(svc domain.TenantService, tm *service.TenantManager) *TenantHandler {
+func NewTenantHandler(svc domain.TenantService, tm domain.TenantManagerWorker) *TenantHandler {
 	return &TenantHandler{service: svc, tenantManager: tm}
 }
 

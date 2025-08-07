@@ -1,10 +1,10 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/adwinugroho/test-chat-multi-schema/model"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -25,7 +25,7 @@ func (cv *CustomValidator) Validate(i any) error {
 	}
 
 	if len(errorArr) > 0 {
-		return model.NewError(model.ErrorInvalidRequest, strings.Join(errorArr, "\n"))
+		return errors.New(strings.Join(errorArr, "\n"))
 	}
 	return nil
 }

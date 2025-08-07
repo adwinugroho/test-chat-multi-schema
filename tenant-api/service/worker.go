@@ -20,7 +20,7 @@ type TenantManager struct {
 	subscribe domain.SubscribeService
 }
 
-func NewTenantManager(subs domain.SubscribeService) *TenantManager {
+func NewTenantManager(subs domain.SubscribeService) domain.TenantManagerWorker {
 	return &TenantManager{
 		consumers: make(map[string]*TenantConsumer),
 		subscribe: subs,
