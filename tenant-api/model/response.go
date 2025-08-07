@@ -8,3 +8,9 @@ type AuthenticationResponse struct {
 	Role  string `json:"role"`
 	Token string `json:"token"`
 }
+
+// tenant
+type CreateTenantResponse struct {
+	TenantID string `json:"tenant_id"`
+	Message  string `json:"message"`
+}

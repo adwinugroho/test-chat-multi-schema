@@ -39,6 +39,11 @@ func main() {
 		logger.LogFatal("Failed to connect to database:" + err.Error())
 	}
 
+	err = config.InitRabbitMQConnection(config.RabbitMQConfig.RabbitMQ.URL)
+	if err != nil {
+		logger.LogFatal("Failed to connect to rabbitMQ:" + err.Error())
+	}
+
 	var e = echo.New()
 	e.Validator = &internalMiddleware.CustomValidator{Validator: validator.New()}
 	e.Use(middleware.Recover())
@@ -48,8 +53,11 @@ func main() {
 	authHandler := controller.NewUserHandler(userService)
 
 	tenantRepository := repository.NewTenantRepository(dbHandler.DB)
+	messageRepository := repository.NewMessageRepository(dbHandler.DB)
 	tenantService := service.NewTenantService(tenantRepository)
-	tenantHandler := controller.NewTenantHandler(tenantService)
+	subscriberService := service.NewListenSubscriber(messageRepository)
+	tenantManager := service.NewTenantManager(subscriberService)
+	tenantHandler := controller.NewTenantHandler(tenantService, tenantManager)
 
 	controller.UserRoutes(e, authHandler)
 	controller.TenantRoutes(e, tenantHandler, userService)
