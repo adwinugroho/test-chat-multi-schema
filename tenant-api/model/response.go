@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 // user
 type AuthenticationResponse struct {
 	ID    string `json:"id"`
@@ -13,4 +15,11 @@ type AuthenticationResponse struct {
 type CreateTenantResponse struct {
 	TenantID string `json:"tenant_id"`
 	Message  string `json:"message"`
+}
+
+// messages
+type ListMessagesResponse struct {
+	MessageID string    `json:"message_id"`
+	Content   string    `json:"content"`
+	CreatedAt time.Time `json:"created_at"`
 }

@@ -16,10 +16,10 @@ type Message struct {
 
 type MessageRepository interface {
 	SaveMessage(ctx context.Context, message *Message) error
-	GetMessages(ctx context.Context, qParam map[string]string) ([]Message, error)
+	GetMessages(ctx context.Context, tenantID string, qParam map[string]string) ([]Message, string, error)
 }
 
 type MessageService interface {
 	PublishMessage(ctx context.Context, tenantID string, req *model.PublishRequest) error
-	GetMessages(ctx context.Context, qParam map[string]string) ([]Message, error)
+	GetMessages(ctx context.Context, tenantID string, qParam map[string]string) ([]model.ListMessagesResponse, string, error)
 }

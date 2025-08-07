@@ -20,5 +20,7 @@ func TenantRoutes(e *echo.Echo, tenantHandler *TenantHandler, userSvc domain.Use
 
 func MessageRoutes(e *echo.Echo, messageHandler *MessageHandler) {
 	messages := e.Group("/messages")
-	messages.POST("/publish", messageHandler.PublishMessage, internalMiddleware.ValidateTenantMiddleware())
+	messages.Use(internalMiddleware.ValidateTenantMiddleware())
+	messages.POST("/publish", messageHandler.PublishMessage)
+	messages.GET("", messageHandler.ListMessages)
 }

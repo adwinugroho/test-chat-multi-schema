@@ -14,11 +14,12 @@ const (
 )
 
 type JsonResponse struct {
-	Data      any    `json:"data,omitempty"`
-	TotalData *int   `json:"total_data,omitempty"`
-	Message   string `json:"message,omitempty"`
-	ErrorCode string `json:"error_code,omitempty"`
-	Success   bool   `json:"success"`
+	Data       any     `json:"data,omitempty"`
+	TotalData  *int    `json:"total_data,omitempty"`
+	NextCursor *string `json:"next_cursor,omitempty"`
+	Message    string  `json:"message,omitempty"`
+	ErrorCode  string  `json:"error_code,omitempty"`
+	Success    bool    `json:"success"`
 }
 
 func NewJsonResponse(success bool) *JsonResponse {
@@ -42,6 +43,12 @@ func (r *JsonResponse) SetData(data any) *JsonResponse {
 
 func (r *JsonResponse) SetMessage(message string) *JsonResponse {
 	r.Message = message
+	return r
+}
+
+func (r *JsonResponse) SetListWithCursor(data any, cursor string) *JsonResponse {
+	r.Data = data
+	r.NextCursor = &cursor
 	return r
 }
 

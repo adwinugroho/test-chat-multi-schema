@@ -37,6 +37,26 @@ func (s *messageService) PublishMessage(ctx context.Context, tenantID string, re
 	return nil
 }
 
-func (s *messageService) GetMessages(ctx context.Context, qParam map[string]string) ([]domain.Message, error) {
-	return s.repository.GetMessages(ctx, qParam)
+func (s *messageService) GetMessages(ctx context.Context, tenantID string, qParam map[string]string) ([]model.ListMessagesResponse, string, error) {
+	messages, nextCursor, err := s.repository.GetMessages(ctx, tenantID, qParam)
+	if err != nil {
+		return nil, "", err
+	}
+
+	if len(messages) == 0 {
+		logger.LogInfo("no rows")
+		return nil, "", nil
+	}
+
+	var results = make([]model.ListMessagesResponse, 0)
+	for _, m := range messages {
+		var r = model.ListMessagesResponse{
+			MessageID: m.MessageID,
+			Content:   string(m.Payload),
+			CreatedAt: m.CreatedAt,
+		}
+		results = append(results, r)
+	}
+
+	return results, nextCursor, nil
 }

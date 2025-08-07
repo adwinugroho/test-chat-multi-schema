@@ -2,8 +2,11 @@ package repository
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 
 	"github.com/adwinugroho/test-chat-multi-schema/domain"
+	"github.com/adwinugroho/test-chat-multi-schema/pkg/helper"
 	"github.com/adwinugroho/test-chat-multi-schema/pkg/logger"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -16,19 +19,29 @@ func NewMessageRepository(db *pgxpool.Pool) domain.MessageRepository {
 	return &messagePgRepo{db: db}
 }
 
-func (r *messagePgRepo) GetMessages(ctx context.Context, qParam map[string]string) ([]domain.Message, error) {
-	limit := qParam["pageSize"]
-	offset := qParam["offset"]
+func (r *messagePgRepo) GetMessages(ctx context.Context, tenantID string, qParam map[string]string) ([]domain.Message, string, error) {
+	limit := qParam["limit"]
+	limitInt, _ := strconv.Atoi(limit)
 
-	query := `SELECT message_id, payload, created_at FROM messages ORDER BY created_at desc LIMIT $1 OFFSET $2;`
-	rows, err := r.db.Query(ctx, query, limit, offset)
+	cursor := qParam["cursor"]
+	cursorInt64, _ := strconv.ParseInt(cursor, 10, 64)
+
+	query := fmt.Sprintf(`
+		SELECT message_id, payload, created_at
+		FROM messages_%s
+		WHERE ($1 = 0 OR EXTRACT(EPOCH FROM created_at) > $1)
+		ORDER BY created_at ASC
+		LIMIT $2;`, helper.SanitizeTenantID(tenantID))
+
+	rows, err := r.db.Query(ctx, query, cursorInt64, limitInt+1)
 	if err != nil {
 		logger.LogError("Error while querying: " + err.Error())
-		return nil, err
+		return nil, "", err
 	}
 	defer rows.Close()
 
 	var results []domain.Message
+	var nextCursor string
 	for rows.Next() {
 		var res domain.Message
 
@@ -37,13 +50,19 @@ func (r *messagePgRepo) GetMessages(ctx context.Context, qParam map[string]strin
 		)
 		if err != nil {
 			logger.LogError("Error while scan row: " + err.Error())
-			return nil, err
+			return nil, "", err
 		}
 
 		results = append(results, res)
 	}
 
-	return results, nil
+	if len(results) > limitInt {
+		nextUnix := results[limitInt].CreatedAt.Unix()
+		nextCursor = fmt.Sprintf("%d", nextUnix)
+		results = results[:limitInt]
+	}
+
+	return results, nextCursor, nil
 }
 
 func (r *messagePgRepo) SaveMessage(ctx context.Context, message *domain.Message) error {
