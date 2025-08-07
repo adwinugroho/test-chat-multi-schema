@@ -89,7 +89,7 @@ func main() {
 
 	controller.UserRoutes(e, authHandler)
 	controller.TenantRoutes(e, tenantHandler, userService)
-	controller.MessageRoutes(e, messageHandler, messageService, userService)
+	controller.MessageRoutes(e, messageHandler)
 
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
