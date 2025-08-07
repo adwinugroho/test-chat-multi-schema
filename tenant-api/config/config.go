@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/adwinugroho/test-chat-multi-schema/pkg/logger"
 	"github.com/spf13/viper"
@@ -26,7 +25,7 @@ func LoadConfig() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatal(err)
+		logger.LogFatal("Error while read in config: " + err.Error())
 	}
 
 	for key, value := range configStruct {
