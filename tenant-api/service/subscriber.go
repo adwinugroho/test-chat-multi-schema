@@ -4,27 +4,29 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/adwinugroho/test-chat-multi-schema/config"
 	"github.com/adwinugroho/test-chat-multi-schema/domain"
 	"github.com/adwinugroho/test-chat-multi-schema/pkg/logger"
 	"github.com/google/uuid"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 )
 
 type subscriberService struct {
 	messageRepository domain.MessageRepository
+	conn              *amqp.Connection
 }
 
-func NewListenSubscriber(m domain.MessageRepository) domain.SubscribeService {
+func NewListenSubscriber(m domain.MessageRepository, rmqConn *amqp.Connection) domain.SubscribeService {
 	return &subscriberService{
 		messageRepository: m,
+		conn:              rmqConn,
 	}
 }
 
 func (s *subscriberService) ConsumeTenantQueue(ctx context.Context, tenantID string, stopChan <-chan struct{}) {
 	queueName := fmt.Sprintf("tenant_%s_queue", tenantID)
 
-	ch, err := config.RabbitConn.Channel()
+	ch, err := s.conn.Channel()
 	if err != nil {
 		logger.LogWithFields(logrus.Fields{
 			"tenant_id": tenantID,

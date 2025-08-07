@@ -18,18 +18,16 @@ type RabbitMQConn struct {
 
 var (
 	RabbitMQConfig EnvRabbitMQConfig
-	RabbitConn     *amqp.Connection
 )
 
-func InitRabbitMQConnection(conn string) error {
+func InitRabbitMQConnection(conn string) (*amqp.Connection, error) {
 	logger.LogWithFields(logrus.Fields{
 		"info": "Connecting to rabbitMQ",
 		"url":  conn,
 	}, "info connecting to message broker")
 	rmqConnection, err := amqp.Dial(conn)
 	if err != nil {
-		return fmt.Errorf("failed to connect to RabbitMQ: %w", err)
+		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
 	}
-	RabbitConn = rmqConnection
-	return nil
+	return rmqConnection, nil
 }

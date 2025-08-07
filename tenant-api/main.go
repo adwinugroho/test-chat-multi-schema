@@ -42,13 +42,13 @@ func main() {
 	defer dbHandler.CloseAllConnection()
 
 	// Initialize RabbitMQ
-	err = config.InitRabbitMQConnection(config.RabbitMQConfig.RabbitMQ.URL)
+	rmqConn, err := config.InitRabbitMQConnection(config.RabbitMQConfig.RabbitMQ.URL)
 	if err != nil {
 		logger.LogFatal("Failed to connect to rabbitMQ:" + err.Error())
 	}
 	defer func() {
-		if config.RabbitConn != nil {
-			config.RabbitConn.Close()
+		if rmqConn != nil {
+			rmqConn.Close()
 			logger.LogInfo("RabbitMQ connection closed")
 		}
 	}()
@@ -76,12 +76,17 @@ func main() {
 	tenantRepository := repository.NewTenantRepository(dbHandler.DB)
 	messageRepository := repository.NewMessageRepository(dbHandler.DB)
 	tenantService := service.NewTenantService(tenantRepository)
-	subscriberService := service.NewListenSubscriber(messageRepository)
+	publisherService := service.NewPublisherService(rmqConn)
+	messageService := service.NewMessageService(publisherService, messageRepository)
+	subscriberService := service.NewListenSubscriber(messageRepository, rmqConn)
+
 	tenantManager := service.NewTenantManager(subscriberService)
 	tenantHandler := controller.NewTenantHandler(tenantService, tenantManager)
+	messageHandler := controller.NewMessageHandler(messageService, publisherService)
 
 	controller.UserRoutes(e, authHandler)
 	controller.TenantRoutes(e, tenantHandler, userService)
+	controller.MessageRoutes(e, messageHandler, messageService, userService)
 
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{

@@ -7,4 +7,5 @@ type EnvAppConfig struct {
 	AppURL      string `mapstructure:"app_url"`
 	Environment string `mapstructure:"environment"`
 	JWTSecret   string `mapstructure:"jwt_secret"`
+	Workers     string `mapstructure:"workers"`
 }

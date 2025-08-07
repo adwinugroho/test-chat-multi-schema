@@ -12,8 +12,8 @@ type UserHandler struct {
 	service domain.UserService
 }
 
-func NewUserHandler(svc domain.UserService) UserHandler {
-	return UserHandler{service: svc}
+func NewUserHandler(svc domain.UserService) *UserHandler {
+	return &UserHandler{service: svc}
 }
 
 func (h *UserHandler) LoginUser(c echo.Context) error {

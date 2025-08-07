@@ -16,8 +16,8 @@ type TenantHandler struct {
 	tenantManager *service.TenantManager
 }
 
-func NewTenantHandler(svc domain.TenantService, tm *service.TenantManager) TenantHandler {
-	return TenantHandler{service: svc, tenantManager: tm}
+func NewTenantHandler(svc domain.TenantService, tm *service.TenantManager) *TenantHandler {
+	return &TenantHandler{service: svc, tenantManager: tm}
 }
 
 func (h *TenantHandler) NewTenant(c echo.Context) error {

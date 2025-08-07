@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 	"time"
+
+	"github.com/adwinugroho/test-chat-multi-schema/model"
 )
 
 type Message struct {
@@ -14,4 +16,10 @@ type Message struct {
 
 type MessageRepository interface {
 	SaveMessage(ctx context.Context, message *Message) error
+	GetMessages(ctx context.Context, qParam map[string]string) ([]Message, error)
+}
+
+type MessageService interface {
+	PublishMessage(ctx context.Context, tenantID string, req *model.PublishRequest) error
+	GetMessages(ctx context.Context, qParam map[string]string) ([]Message, error)
 }

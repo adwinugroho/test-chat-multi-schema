@@ -16,6 +16,36 @@ func NewMessageRepository(db *pgxpool.Pool) domain.MessageRepository {
 	return &messagePgRepo{db: db}
 }
 
+func (r *messagePgRepo) GetMessages(ctx context.Context, qParam map[string]string) ([]domain.Message, error) {
+	limit := qParam["pageSize"]
+	offset := qParam["offset"]
+
+	query := `SELECT message_id, payload, created_at FROM messages ORDER BY created_at desc LIMIT $1 OFFSET $2;`
+	rows, err := r.db.Query(ctx, query, limit, offset)
+	if err != nil {
+		logger.LogError("Error while querying: " + err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []domain.Message
+	for rows.Next() {
+		var res domain.Message
+
+		err := rows.Scan(
+			&res.MessageID, &res.Payload, &res.CreatedAt,
+		)
+		if err != nil {
+			logger.LogError("Error while scan row: " + err.Error())
+			return nil, err
+		}
+
+		results = append(results, res)
+	}
+
+	return results, nil
+}
+
 func (r *messagePgRepo) SaveMessage(ctx context.Context, message *domain.Message) error {
 	query := `
 			INSERT INTO messages (message_id, tenant_id, payload, created_at)

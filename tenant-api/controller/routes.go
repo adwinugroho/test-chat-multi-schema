@@ -6,14 +6,20 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func UserRoutes(e *echo.Echo, userHandler UserHandler) {
+func UserRoutes(e *echo.Echo, userHandler *UserHandler) {
 	auth := e.Group("/authentication")
 	auth.POST("/login", userHandler.LoginUser)
 }
 
-func TenantRoutes(e *echo.Echo, tenantHandler TenantHandler, userSvc domain.UserService) {
+func TenantRoutes(e *echo.Echo, tenantHandler *TenantHandler, userSvc domain.UserService) {
 	tenants := e.Group("/tenants")
 	tenants.Use(internalMiddleware.AuthenticationMiddleware(userSvc))
 	tenants.POST("", tenantHandler.NewTenant)
 	tenants.DELETE("/:id", tenantHandler.RemoveTenantByID)
+}
+
+func MessageRoutes(e *echo.Echo, messageHandler *MessageHandler, messageSvc domain.MessageService, userSvc domain.UserService) {
+	messages := e.Group("/messages")
+	messages.Use(internalMiddleware.AuthenticationMiddleware(userSvc))
+	messages.POST("/publish", messageHandler.PublishMessage)
 }
