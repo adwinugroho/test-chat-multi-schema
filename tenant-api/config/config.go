@@ -15,6 +15,7 @@ var (
 var configStruct = map[string]interface{}{
 	"app-config":        &AppConfig,
 	"postgresql-config": &PostgreSQLConfig,
+	"rabbitmq-config":   &RabbitMQConfig,
 }
 
 func LoadConfig() {
@@ -32,6 +33,5 @@ func LoadConfig() {
 		if err := viper.Unmarshal(value); err != nil {
 			logger.LogFatal(fmt.Sprintf("Error loading config %s, cause: %+v\n", key, err))
 		}
-		logger.LogInfo(fmt.Sprintf("Config loaded successfully: %s, value: %+v", key, value))
 	}
 }

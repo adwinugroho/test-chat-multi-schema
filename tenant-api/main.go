@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/adwinugroho/test-chat-multi-schema/controller"
 	internalMiddleware "github.com/adwinugroho/test-chat-multi-schema/controller/middleware"
 	"github.com/adwinugroho/test-chat-multi-schema/pkg/logger"
+	"github.com/adwinugroho/test-chat-multi-schema/pkg/server"
 	"github.com/adwinugroho/test-chat-multi-schema/repository"
 	"github.com/adwinugroho/test-chat-multi-schema/service"
 	"github.com/go-playground/validator/v10"
@@ -26,27 +26,48 @@ func init() {
 }
 
 func main() {
-	logger.LogInfo("Starting application...")
-	logger.LogInfo("Application started on port:" + config.AppConfig.Port)
-	logger.LogInfo("Application URL:" + config.AppConfig.AppURL)
+	logger.LogInfo("Starting application initialization...")
+
+	config.LoadConfig()
 
 	parentCtx := context.Background()
-	ctx, cancel := context.WithTimeout(parentCtx, 60*time.Second)
+	ctx, cancel := context.WithTimeout(parentCtx, 30*time.Second) // Reduced timeout
 	defer cancel()
 
+	// Initialize database
 	dbHandler, err := config.InitConnectDB(ctx, config.PostgreSQLConfig.Database.URL)
 	if err != nil {
 		logger.LogFatal("Failed to connect to database:" + err.Error())
 	}
+	defer dbHandler.CloseAllConnection()
 
+	// Initialize RabbitMQ
 	err = config.InitRabbitMQConnection(config.RabbitMQConfig.RabbitMQ.URL)
 	if err != nil {
 		logger.LogFatal("Failed to connect to rabbitMQ:" + err.Error())
 	}
+	defer func() {
+		if config.RabbitConn != nil {
+			config.RabbitConn.Close()
+			logger.LogInfo("RabbitMQ connection closed")
+		}
+	}()
 
-	var e = echo.New()
+	e := echo.New()
 	e.Validator = &internalMiddleware.CustomValidator{Validator: validator.New()}
 	e.Use(middleware.Recover())
+	e.Use(middleware.Secure())
+
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Response().Header().Set("X-Content-Type-Options", "nosniff")
+			c.Response().Header().Set("X-Frame-Options", "DENY")
+			c.Response().Header().Set("X-XSS-Protection", "1; mode=block")
+			c.Response().Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+			c.Response().Header().Set("Content-Security-Policy", "default-src 'self' https: 'unsafe-inline'")
+			return next(c)
+		}
+	})
 
 	userRepository := repository.NewUserRepository(dbHandler.DB)
 	userService := service.NewUserService(userRepository)
@@ -62,25 +83,17 @@ func main() {
 	controller.UserRoutes(e, authHandler)
 	controller.TenantRoutes(e, tenantHandler, userService)
 
-	e.Use(middleware.Secure())
-
-	// Add security headers middleware
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			// Security headers
-			c.Response().Header().Set("X-Content-Type-Options", "nosniff")
-			c.Response().Header().Set("X-Frame-Options", "DENY")
-			c.Response().Header().Set("X-XSS-Protection", "1; mode=block")
-			c.Response().Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
-			c.Response().Header().Set("Content-Security-Policy", "default-src 'self' https: 'unsafe-inline'")
-
-			return next(c)
-		}
-	})
-
 	e.GET("/health", func(c echo.Context) error {
-		return c.String(http.StatusOK, "OK")
+		return c.JSON(http.StatusOK, map[string]string{
+			"status":   "OK",
+			"database": "connected",
+			"rabbitmq": "connected",
+		})
 	})
 
-	e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", config.AppConfig.Port)))
+	logger.LogInfo("Application fully initialized")
+	logger.LogInfo("Server starting on port:" + config.AppConfig.Port)
+	logger.LogInfo("Application URL:" + config.AppConfig.AppURL)
+
+	server.StartServerWithGracefulShutdown(e, ctx, dbHandler)
 }

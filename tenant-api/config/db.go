@@ -57,3 +57,24 @@ func InitConnectDB(ctx context.Context, conn string) (*PostgresDB, error) {
 
 	return &PostgresDB{DB: dbPool}, nil
 }
+
+func (p *PostgresDB) CloseAllConnection() {
+	if p.DB != nil {
+		logger.LogWithFields(logrus.Fields{
+			"action": "closing_all_database_connections",
+		}, "closing all database connections and purging pool")
+
+		_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		// Tutup pool dengan context
+		p.DB.Close()
+
+		stats := p.DB.Stat()
+		logger.LogWithFields(logrus.Fields{
+			"total_connections": stats.TotalConns(),
+			"idle_connections":  stats.IdleConns(),
+			"action":            "all_connections_closed",
+		}, "successfully closed all database connections")
+	}
+}
