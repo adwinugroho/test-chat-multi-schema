@@ -23,7 +23,7 @@ func (p *publisherService) Publish(ctx context.Context, tenantID string, body []
 	}
 	defer ch.Close()
 
-	queueName := fmt.Sprintf("message_queue_%s", tenantID)
+	queueName := fmt.Sprintf("tenant_%s_queue", tenantID)
 
 	_, err = ch.QueueDeclare(
 		queueName,
