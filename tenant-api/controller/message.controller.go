@@ -9,14 +9,12 @@ import (
 )
 
 type MessageHandler struct {
-	service        domain.MessageService
-	publishService domain.PublisherService
+	service domain.MessageService
 }
 
-func NewMessageHandler(svc domain.MessageService, publishSvc domain.PublisherService) *MessageHandler {
+func NewMessageHandler(svc domain.MessageService) *MessageHandler {
 	return &MessageHandler{
-		service:        svc,
-		publishService: publishSvc,
+		service: svc,
 	}
 }
 
@@ -30,8 +28,15 @@ func (h *MessageHandler) PublishMessage(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	tenantID := c.Get("tenant_id").(string)
-	h.service.PublishMessage(c.Request().Context(), tenantID, &req)
+	tenantID, ok := c.Get("tenant_id").(string)
+	if !ok {
+		return c.JSON(http.StatusForbidden, model.NewError(model.ErrorUnauthorized, "Access denied"))
+	}
+
+	err := h.service.PublishMessage(c.Request().Context(), tenantID, &req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
 
 	return c.JSON(http.StatusOK, model.NewJsonResponse(true).
 		SetMessage("Successfully publish message"))

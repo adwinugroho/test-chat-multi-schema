@@ -20,11 +20,11 @@ func NewUserRepository(db *pgxpool.Pool) domain.UserRepository {
 
 func (r *userPgRepo) Create(ctx context.Context, user *domain.User) error {
 	query := `
-		INSERT INTO users (id, email, password, name, role)
+		INSERT INTO users (user_id, email, password, name, role)
 		VALUES ($1, $2, $3, $4, $5)
 	`
 	_, err := r.db.Exec(ctx, query,
-		user.ID,
+		user.UserID,
 		user.Email,
 		user.Password,
 		user.Name,
@@ -39,17 +39,18 @@ func (r *userPgRepo) Create(ctx context.Context, user *domain.User) error {
 }
 
 func (r *userPgRepo) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
-	query := `SELECT id, email, password, name, role FROM users WHERE email = $1`
+	query := `SELECT user_id, email, password, name, role, tenant_id FROM users WHERE email = $1`
 
 	row := r.db.QueryRow(ctx, query, email)
 
 	var user domain.User
 	err := row.Scan(
-		&user.ID,
+		&user.UserID,
 		&user.Email,
 		&user.Password,
 		&user.Name,
 		&user.Role,
+		&user.TenantID,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -63,17 +64,18 @@ func (r *userPgRepo) GetByEmail(ctx context.Context, email string) (*domain.User
 }
 
 func (r *userPgRepo) GetByID(ctx context.Context, id string) (*domain.User, error) {
-	query := `SELECT id, email, password, name, role FROM users WHERE id = $1`
+	query := `SELECT user_id, email, password, name, role, tenant_id FROM users WHERE id = $1`
 
 	row := r.db.QueryRow(ctx, query, id)
 
 	var user domain.User
 	err := row.Scan(
-		&user.ID,
+		&user.UserID,
 		&user.Email,
 		&user.Password,
 		&user.Name,
 		&user.Role,
+		&user.TenantID,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

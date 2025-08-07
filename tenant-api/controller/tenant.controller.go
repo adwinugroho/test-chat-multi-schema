@@ -30,9 +30,15 @@ func (h *TenantHandler) NewTenant(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
+	userSession, ok := c.Get("user").(*domain.User)
+	if !ok {
+		return c.JSON(http.StatusForbidden, model.NewError(model.ErrorUnauthorized, "Access denied"))
+	}
+
 	payload := &domain.Tenant{
 		TenantID:   uuid.New().String(),
 		TenantName: req.TenantName,
+		UserID:     userSession.UserID,
 	}
 
 	err := h.service.NewTenant(c.Request().Context(), payload)

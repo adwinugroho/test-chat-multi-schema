@@ -9,5 +9,5 @@ type NewTenantRequest struct {
 	TenantName string `json:"tenant_name" validate:"required"`
 }
 type PublishRequest struct {
-	Content string `json:"content" validate:"required"`
+	Content map[string]any `json:"content" validate:"required"`
 }

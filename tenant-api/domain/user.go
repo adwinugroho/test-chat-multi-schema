@@ -7,11 +7,12 @@ import (
 )
 
 type User struct {
-	ID       string  `db:"id"`
+	UserID   string  `db:"user_id"`
 	Name     string  `db:"name"`
 	Email    string  `db:"email"`
 	Password *string `db:"password"`
 	Role     string  `db:"role"`
+	TenantID *string `db:"tenant_id"` //NULLABLE
 }
 
 type UserRepository interface {

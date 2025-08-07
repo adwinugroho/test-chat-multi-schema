@@ -3,11 +3,10 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/adwinugroho/test-chat-multi-schema/domain"
 	"github.com/adwinugroho/test-chat-multi-schema/model"
-	"github.com/google/uuid"
+	"github.com/adwinugroho/test-chat-multi-schema/pkg/logger"
 )
 
 type messageService struct {
@@ -25,20 +24,17 @@ func NewMessageService(pub domain.PublisherService, repo domain.MessageRepositor
 func (s *messageService) PublishMessage(ctx context.Context, tenantID string, req *model.PublishRequest) error {
 	jsonBytes, err := json.Marshal(req.Content)
 	if err != nil {
-		return err
-	}
-	message := &domain.Message{
-		MessageID: uuid.NewString(),
-		Payload:   jsonBytes,
-		TenantID:  tenantID,
+		logger.LogError("Error while marshall content message:" + err.Error())
+		return model.NewError(model.ErrorGeneral, "Internal server error")
 	}
 
-	body, err := json.Marshal(message)
+	err = s.publisher.Publish(ctx, tenantID, jsonBytes)
 	if err != nil {
-		return fmt.Errorf("failed to marshal message: %w", err)
+		logger.LogError("Error while publish message:" + err.Error())
+		return model.NewError(model.ErrorGeneral, "Internal server error")
 	}
 
-	return s.publisher.Publish(ctx, tenantID, body)
+	return nil
 }
 
 func (s *messageService) GetMessages(ctx context.Context, qParam map[string]string) ([]domain.Message, error) {

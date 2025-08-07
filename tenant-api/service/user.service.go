@@ -23,10 +23,10 @@ func NewUserService(userRepository domain.UserRepository) domain.UserService {
 func (s *userService) generateJWTToken(userID, role string) (string, error) {
 	// Create the Claims
 	claims := jwt.MapClaims{
-		"id":   userID,
-		"role": role,
-		"exp":  time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
-		"iat":  time.Now().Unix(),
+		"user_id":   userID,
+		"user_role": role,
+		"exp":       time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
+		"iat":       time.Now().Unix(),
 	}
 
 	// Create token
@@ -86,14 +86,14 @@ func (s *userService) LoginUser(ctx context.Context, req model.LoginUserRequest)
 	}
 
 	// Generate token
-	token, err := s.generateJWTToken(user.ID, user.Role)
+	token, err := s.generateJWTToken(user.UserID, user.Role)
 	if err != nil {
 		logger.LogError("Failed to generate token: " + err.Error())
 		return nil, model.NewError(model.ErrorGeneral, "Internal server error")
 	}
 
 	return &model.AuthenticationResponse{
-		ID:    user.ID,
+		ID:    user.UserID,
 		Name:  user.Name,
 		Email: user.Email,
 		Role:  user.Role,

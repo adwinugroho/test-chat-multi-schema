@@ -35,7 +35,7 @@ func AuthenticationMiddleware(userSvc domain.UserService) echo.MiddlewareFunc {
 				return c.JSON(http.StatusUnauthorized, model.NewError(model.ErrorUnauthorizedTokenExpired, "Invalid token claims"))
 			}
 
-			userID, ok := claims["id"].(string)
+			userID, ok := claims["user_id"].(string)
 			if !ok || userID == "" {
 				return c.JSON(http.StatusUnauthorized, model.NewError(model.ErrorUnauthorized, "Invalid user ID"))
 			}
@@ -49,10 +49,26 @@ func AuthenticationMiddleware(userSvc domain.UserService) echo.MiddlewareFunc {
 			if user == nil {
 				return c.JSON(http.StatusUnauthorized, model.NewError(model.ErrorUnauthorized, "User not found"))
 			}
+			// remove tenant id
+			user.TenantID = nil
 
 			c.Set("user", user)
 			c.Set("user_role", user.Role)
 
+			return next(c)
+		}
+	}
+}
+
+func ValidateTenantMiddleware() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			tenantID := c.Request().Header.Get("X-Tenant-ID")
+			if tenantID == "" {
+				return c.JSON(http.StatusUnauthorized, model.NewError(model.ErrorUnauthorized, "Missing X-Tenant-ID header"))
+			}
+
+			c.Set("tenant_id", tenantID)
 			return next(c)
 		}
 	}

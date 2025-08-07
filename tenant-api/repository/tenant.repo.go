@@ -19,12 +19,13 @@ func NewTenantRepository(db *pgxpool.Pool) domain.TenantRepository {
 
 func (r *tenantPgRepo) Create(ctx context.Context, tenant *domain.Tenant) error {
 	query := `
-		INSERT INTO tenant (id, tenant_id, tenant_name)
-		VALUES ($1, $2, $3)
+		INSERT INTO tenants (tenant_id, tenant_name, user_id)
+		VALUES ($1, $2)
 	`
 	_, err := r.db.Exec(ctx, query,
 		tenant.TenantID,
 		tenant.TenantName,
+		tenant.UserID,
 	)
 	if err != nil {
 		logger.LogError("Error querying: " + err.Error())
@@ -52,7 +53,7 @@ func (r *tenantPgRepo) CreateTenantPartition(ctx context.Context, tenantID strin
 
 func (r *tenantPgRepo) Delete(ctx context.Context, id string) error {
 	query := `
-		DELETE FROM tenant WHERE tenant_id = $1
+		DELETE FROM tenants WHERE tenant_id = $1
 	`
 	_, err := r.db.Exec(ctx, query, id)
 	if err != nil {

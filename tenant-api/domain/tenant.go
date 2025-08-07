@@ -5,6 +5,7 @@ import "context"
 type Tenant struct {
 	TenantID   string `db:"tenant_id"`
 	TenantName string `db:"tenant_name"`
+	UserID     string `db:"user_id"`
 }
 
 type TenantRepository interface {

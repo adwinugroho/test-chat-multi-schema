@@ -25,17 +25,18 @@ func (p *publisherService) Publish(ctx context.Context, tenantID string, body []
 
 	queueName := fmt.Sprintf("tenant_%s_queue", tenantID)
 
-	_, err = ch.QueueDeclare(
-		queueName,
-		true,  // durable
-		false, // auto-delete
-		false, // exclusive
-		false, // no-wait
-		nil,   // args
-	)
-	if err != nil {
-		return fmt.Errorf("failed to declare queue: %w", err)
-	}
+	// already declare on consumer when consumer start
+	// _, err = ch.QueueDeclare(
+	// 	queueName,
+	// 	true,  // durable
+	// 	false, // auto-delete
+	// 	false, // exclusive
+	// 	false, // no-wait
+	// 	nil,   // args
+	// )
+	// if err != nil {
+	// 	return fmt.Errorf("failed to declare queue: %w", err)
+	// }
 
 	err = ch.PublishWithContext(ctx,
 		"",        // exchange

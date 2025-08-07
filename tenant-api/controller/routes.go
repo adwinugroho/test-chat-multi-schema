@@ -18,8 +18,7 @@ func TenantRoutes(e *echo.Echo, tenantHandler *TenantHandler, userSvc domain.Use
 	tenants.DELETE("/:id", tenantHandler.RemoveTenantByID)
 }
 
-func MessageRoutes(e *echo.Echo, messageHandler *MessageHandler, messageSvc domain.MessageService, userSvc domain.UserService) {
+func MessageRoutes(e *echo.Echo, messageHandler *MessageHandler) {
 	messages := e.Group("/messages")
-	messages.Use(internalMiddleware.AuthenticationMiddleware(userSvc))
-	messages.POST("/publish", messageHandler.PublishMessage)
+	messages.POST("/publish", messageHandler.PublishMessage, internalMiddleware.ValidateTenantMiddleware())
 }

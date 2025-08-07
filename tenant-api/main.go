@@ -71,18 +71,21 @@ func main() {
 
 	userRepository := repository.NewUserRepository(dbHandler.DB)
 	userService := service.NewUserService(userRepository)
-	authHandler := controller.NewUserHandler(userService)
 
 	tenantRepository := repository.NewTenantRepository(dbHandler.DB)
 	messageRepository := repository.NewMessageRepository(dbHandler.DB)
 	tenantService := service.NewTenantService(tenantRepository)
+
 	publisherService := service.NewPublisherService(rmqConn)
-	messageService := service.NewMessageService(publisherService, messageRepository)
 	subscriberService := service.NewListenSubscriber(messageRepository, rmqConn)
 
+	messageService := service.NewMessageService(publisherService, messageRepository)
+
 	tenantManager := service.NewTenantManager(subscriberService)
+
+	authHandler := controller.NewUserHandler(userService)
 	tenantHandler := controller.NewTenantHandler(tenantService, tenantManager)
-	messageHandler := controller.NewMessageHandler(messageService, publisherService)
+	messageHandler := controller.NewMessageHandler(messageService)
 
 	controller.UserRoutes(e, authHandler)
 	controller.TenantRoutes(e, tenantHandler, userService)
