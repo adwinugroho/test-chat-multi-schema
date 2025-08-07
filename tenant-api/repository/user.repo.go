@@ -64,7 +64,7 @@ func (r *userPgRepo) GetByEmail(ctx context.Context, email string) (*domain.User
 }
 
 func (r *userPgRepo) GetByID(ctx context.Context, id string) (*domain.User, error) {
-	query := `SELECT user_id, email, password, name, role, tenant_id FROM users WHERE id = $1`
+	query := `SELECT user_id, email, password, name, role, tenant_id FROM users WHERE user_id = $1`
 
 	row := r.db.QueryRow(ctx, query, id)
 

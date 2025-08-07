@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/adwinugroho/test-chat-multi-schema/domain"
@@ -51,7 +52,9 @@ func (h *TenantHandler) NewTenant(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	err = h.tenantManager.StartConsumer(c.Request().Context(), payload.TenantID)
+	// replace context
+	consumerCtx := context.Background()
+	err = h.tenantManager.StartConsumer(consumerCtx, payload.TenantID)
 	if err != nil {
 		logger.LogError("Error while start consumer:" + err.Error())
 		return c.JSON(http.StatusInternalServerError, model.NewError(model.ErrorGeneral, "Internal server error"))

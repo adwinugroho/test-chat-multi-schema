@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/adwinugroho/test-chat-multi-schema/domain"
@@ -33,7 +34,8 @@ func (h *MessageHandler) PublishMessage(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, model.NewError(model.ErrorUnauthorized, "Access denied"))
 	}
 
-	err := h.service.PublishMessage(c.Request().Context(), tenantID, &req)
+	publisherCtx := context.Background()
+	err := h.service.PublishMessage(publisherCtx, tenantID, &req)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}

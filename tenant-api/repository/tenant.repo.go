@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/adwinugroho/test-chat-multi-schema/domain"
+	"github.com/adwinugroho/test-chat-multi-schema/pkg/helper"
 	"github.com/adwinugroho/test-chat-multi-schema/pkg/logger"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -20,7 +21,7 @@ func NewTenantRepository(db *pgxpool.Pool) domain.TenantRepository {
 func (r *tenantPgRepo) Create(ctx context.Context, tenant *domain.Tenant) error {
 	query := `
 		INSERT INTO tenants (tenant_id, tenant_name, user_id)
-		VALUES ($1, $2)
+		VALUES ($1, $2, $3)
 	`
 	_, err := r.db.Exec(ctx, query,
 		tenant.TenantID,
@@ -36,11 +37,12 @@ func (r *tenantPgRepo) Create(ctx context.Context, tenant *domain.Tenant) error 
 }
 
 func (r *tenantPgRepo) CreateTenantPartition(ctx context.Context, tenantID string) error {
+	tableName := helper.SanitizeTenantID(tenantID)
 	query := fmt.Sprintf(`
 		CREATE TABLE IF NOT EXISTS messages_%s
 		PARTITION OF messages
 		FOR VALUES IN ('%s')
-	`, tenantID, tenantID)
+	`, tableName, tenantID)
 
 	_, err := r.db.Exec(ctx, query)
 	if err != nil {
