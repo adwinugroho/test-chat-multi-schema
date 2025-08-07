@@ -16,6 +16,7 @@ func TenantRoutes(e *echo.Echo, tenantHandler *TenantHandler, userSvc domain.Use
 	tenants.Use(internalMiddleware.AuthenticationMiddleware(userSvc))
 	tenants.POST("", tenantHandler.NewTenant)
 	tenants.DELETE("/:id", tenantHandler.RemoveTenantByID)
+	tenants.PUT("/:id", tenantHandler.UpdateTenantConcurrency)
 }
 
 func MessageRoutes(e *echo.Echo, messageHandler *MessageHandler) {

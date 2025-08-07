@@ -3,7 +3,9 @@ package controller
 import (
 	"context"
 	"net/http"
+	"strconv"
 
+	"github.com/adwinugroho/test-chat-multi-schema/config"
 	"github.com/adwinugroho/test-chat-multi-schema/domain"
 	"github.com/adwinugroho/test-chat-multi-schema/model"
 	"github.com/adwinugroho/test-chat-multi-schema/pkg/logger"
@@ -52,9 +54,15 @@ func (h *TenantHandler) NewTenant(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
+	defaultWorkers, err := strconv.Atoi(config.AppConfig.Workers)
+	if err != nil {
+		logger.LogError("Default worker is invalid number:" + err.Error())
+		return c.JSON(http.StatusInternalServerError, model.NewError(model.ErrorGeneral, "Internal server error"))
+	}
+
 	// replace context
 	consumerCtx := context.Background()
-	err = h.tenantManager.StartConsumer(consumerCtx, payload.TenantID)
+	err = h.tenantManager.StartConsumer(consumerCtx, payload.TenantID, defaultWorkers)
 	if err != nil {
 		logger.LogError("Error while start consumer:" + err.Error())
 		return c.JSON(http.StatusInternalServerError, model.NewError(model.ErrorGeneral, "Internal server error"))
@@ -83,4 +91,29 @@ func (h *TenantHandler) RemoveTenantByID(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, model.NewJsonResponse(true).
 		SetMessage("Successfully remove tenant"))
+}
+
+func (h *TenantHandler) UpdateTenantConcurrency(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.JSON(http.StatusBadRequest, model.NewError(model.ErrorBadRequest, "Bad request"))
+	}
+
+	var req model.UpdateTenantConcurrencyRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, model.NewError(model.ErrorInvalidRequest, "Invalid request body"))
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, model.NewError(model.ErrorBadRequest, err.Error()))
+	}
+
+	err := h.tenantManager.RestartConsumer(c.Request().Context(), id, req.Workers)
+	if err != nil {
+		logger.LogError("failed to restart consumer: " + err.Error())
+		return c.JSON(http.StatusBadRequest, model.NewError(model.ErrorBadRequest, err.Error()))
+	}
+
+	return c.JSON(http.StatusOK, model.NewJsonResponse(true).
+		SetMessage("Successfully updated tenant concurrency"))
 }

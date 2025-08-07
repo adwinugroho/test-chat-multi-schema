@@ -11,6 +11,7 @@ import (
 type TenantConsumer struct {
 	stopChan chan struct{}
 	doneChan chan struct{}
+	workers  int
 }
 
 type TenantManager struct {
@@ -26,7 +27,7 @@ func NewTenantManager(subs domain.SubscribeService) *TenantManager {
 	}
 }
 
-func (tm *TenantManager) StartConsumer(ctx context.Context, tenantID string) error {
+func (tm *TenantManager) StartConsumer(ctx context.Context, tenantID string, workers int) error {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 
@@ -39,12 +40,13 @@ func (tm *TenantManager) StartConsumer(ctx context.Context, tenantID string) err
 
 	go func() {
 		defer close(doneChan)
-		tm.subscribe.ConsumeTenantQueue(ctx, tenantID, stopChan)
+		tm.subscribe.ConsumeTenantQueue(ctx, tenantID, stopChan, workers)
 	}()
 
 	tm.consumers[tenantID] = &TenantConsumer{
 		stopChan: stopChan,
 		doneChan: doneChan,
+		workers:  workers,
 	}
 
 	return nil
@@ -65,7 +67,13 @@ func (tm *TenantManager) StopConsumer(tenantID string) error {
 	return nil
 }
 
-// optional to kill all running queue
+func (tm *TenantManager) RestartConsumer(ctx context.Context, tenantID string, workers int) error {
+	if err := tm.StopConsumer(tenantID); err != nil {
+		return err
+	}
+	return tm.StartConsumer(ctx, tenantID, workers)
+}
+
 func (tm *TenantManager) StopAllConsumers() {
 	tm.mu.Lock()
 	tenantIDs := make([]string, 0, len(tm.consumers))
